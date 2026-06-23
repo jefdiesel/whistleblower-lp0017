@@ -1,0 +1,23 @@
+[package]
+name = "wb-types"
+description = "Shared Whistleblower types: metadata envelope, canonical metadata hash, on-chain registry record, and the Logos Delivery topic. Used by both the host clients and the on-chain (RISC0 guest) registry program."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+# `hash` and `json` are host-side conveniences. The on-chain guest depends on
+# this crate with `default-features = false`, pulling only the (serde + borsh)
+# type definitions — no serde_json, no sha2.
+default = ["hash", "json"]
+hash = ["dep:sha2"]
+json = ["dep:serde_json"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+borsh = { workspace = true }
+sha2 = { workspace = true, optional = true }
+hex = { workspace = true }

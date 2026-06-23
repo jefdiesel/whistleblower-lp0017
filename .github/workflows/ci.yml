@@ -1,0 +1,120 @@
+name: CI
+
+# Continuous integration for Whistleblower (Logos prize LP-0017).
+#
+# Two jobs:
+#   * `workspace`   — the GATING job. Formats, builds, tests and lints the root
+#                     Cargo workspace (wb-types, wb-index, wb-batch-anchor, the
+#                     wb-e2e integration tests). This must stay green.
+#   * `lez-program` — a BEST-EFFORT, non-gating job that tries to build the
+#                     on-chain LEZ registry program (RISC0 zkVM guest). It is
+#                     allowed to fail; see the comments on that job.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # GATING: the host workspace must build, test and lint cleanly.
+  # ---------------------------------------------------------------------------
+  workspace:
+    name: workspace (build • test • lint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pin to the exact toolchain the repo targets (rust-toolchain.toml -> 1.94.0)
+      # and add the components the lint/format steps need.
+      - name: Install Rust 1.94.0
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
+          components: rustfmt, clippy
+
+      # Cache the cargo registry and target dir across runs for speed.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Build
+        run: cargo build --workspace
+
+      - name: Test
+        run: cargo test --workspace
+
+      # Clippy on the whole workspace, including tests/benches/examples.
+      #
+      # NOTE on `-D warnings`: it is intentionally NOT passed here. The
+      # workspace was not verified clippy-clean in the environment where this
+      # workflow was authored (the local sandbox blocked running `cargo clippy`
+      # / `rustfmt`), so promoting clippy warnings to hard errors could turn an
+      # advisory lint into a gating failure that was never observed locally.
+      # Clippy still runs and surfaces findings in the log; once the workspace
+      # is confirmed clean on CI, append `-- -D warnings` to make it enforcing.
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets
+
+  # ---------------------------------------------------------------------------
+  # BEST-EFFORT (non-gating): build the on-chain LEZ registry program.
+  # ---------------------------------------------------------------------------
+  #
+  # `continue-on-error: true` so this never blocks a merge. The LEZ stack is
+  # pre-1.0 and not yet reproducible in plain CI:
+  #
+  #   * The guest is a riscv32 RISC0 zkVM program and needs the RISC Zero
+  #     toolchain (`rzup`), installed below — a large, network-heavy download.
+  #   * The LEZ host deps (logos-execution-zone, SPEL) currently require a
+  #     `[patch]` to pin `ring` (see LEZ issue #468) before they build, which is
+  #     not wired up in this repo's root workspace (the program is deliberately
+  #     EXCLUDED from it for exactly this reason).
+  #
+  # We therefore only *attempt* the build and report status; failures are
+  # expected until the LEZ stack stabilizes and the ring patch lands upstream.
+  lez-program:
+    name: lez-program (best-effort, non-gating)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust 1.94.0
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
+
+      # Install the RISC Zero toolchain (zkVM guest compiler) via rzup.
+      - name: Install RISC0 toolchain
+        run: |
+          curl -L https://risczero.com/install | bash
+          ~/.risc0/bin/rzup install
+
+      # Best-effort attempt to generate the program IDL / build the guest.
+      # `make idl` is the program's own entry point; if the target or the LEZ
+      # `[patch]` is not yet present this step fails, which is fine (non-gating).
+      - name: Build LEZ registry program (best-effort)
+        run: |
+          export PATH="$HOME/.risc0/bin:$PATH"
+          cd crates/wb-registry-program && make idl

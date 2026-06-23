@@ -1,0 +1,6 @@
+# Pinned to match the LEZ toolchain (logos-execution-zone root rust-toolchain.toml).
+# The on-chain guest additionally needs the RISC Zero toolchain (see HANDOFF.md):
+#   curl -L https://risczero.com/install | bash && rzup install
+[toolchain]
+channel = "1.94.0"
+components = ["rustfmt", "clippy"]

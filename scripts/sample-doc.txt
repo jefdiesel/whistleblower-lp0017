@@ -1,0 +1,16 @@
+WHISTLEBLOWER — SAMPLE DOCUMENT
+Logos prize LP-0017
+
+This is a sample document used by scripts/demo.sh to exercise the real,
+end-to-end Whistleblower pipeline:
+
+  1. its bytes are uploaded to Logos Storage (Codex), yielding a content
+     identifier (CID);
+  2. a JSON metadata envelope describing it is broadcast over Logos Delivery
+     (Waku) to the content topic /whistleblower/1/documents/json;
+  3. the permissionless batch-anchor tool picks the CID up off that topic and
+     anchors a (cid, metadata_hash) tuple on-chain in the LEZ
+     whistleblower_registry program;
+  4. the tuple is then queryable by CID.
+
+Replace this file with any document you want to publish in the demo.

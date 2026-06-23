@@ -1,0 +1,17 @@
+[package]
+name = "wb-registry-methods"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+# risc0-build compiles the guest crate (methods/guest) into an embedded ELF +
+# image id, exposed via the generated methods.rs.
+[package.metadata.risc0]
+methods = ["guest"]
+
+[build-dependencies]
+risc0-build = "=3.0.5"
+
+[dependencies]
+risc0-zkvm = { version = "=3.0.5", features = ["std"] }
+wb_registry_core = { path = "../wb_registry_core" }

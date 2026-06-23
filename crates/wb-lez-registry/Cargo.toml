@@ -1,0 +1,106 @@
+# wb-lez-registry — the REAL on-chain RegistryClient adapter for Whistleblower.
+#
+# This crate is its OWN cargo workspace (it is `exclude`d from the repo-root
+# workspace) because it pins the Logos Execution Zone (LEZ) git dependencies at
+# tag v0.1.2 and ultimately links against a RISC0-built program client. Those
+# deps drag in a riscv32 zkVM toolchain and will NOT resolve on a machine that
+# lacks the RISC0 toolchain + network access to the LEZ repo. Keeping it as a
+# standalone workspace lets the rest of the repo build and test anywhere.
+#
+# Dual-licensed: MIT OR Apache-2.0.
+
+[workspace]
+# Empty members list => this Cargo.toml *is* the (single-crate) workspace root.
+# Declared explicitly so the crate does not try to attach to any parent workspace.
+members = ["."]
+resolver = "2"
+
+[package]
+name = "wb-lez-registry"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "MIT OR Apache-2.0"
+authors = ["Whistleblower contributors"]
+repository = "https://github.com/your-org/whistleblower"
+description = "Real on-chain RegistryClient adapter for Whistleblower: anchors (CID, metadata_hash) tuples into the LEZ whistleblower_registry SPEL program and queries records by CID."
+
+[lib]
+name = "wb_lez_registry"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wb-batch-anchor-lez"
+path = "src/main.rs"
+
+[dependencies]
+# --- Local Whistleblower crates (shared, already built & tested) ---------------
+wb-index = { path = "../wb-index" }
+wb-batch-anchor = { path = "../wb-batch-anchor" }
+wb-types = { path = "../wb-types" }
+# Shared on-chain types + cid_seed(). NOTE: this crate is written in parallel; the
+# path below is where wb-registry-program exposes its `wb_registry_core` library.
+wb_registry_core = { path = "../wb-registry-program/wb_registry_core" }
+
+# --- Logos Execution Zone (LEZ) v0.1.2 -----------------------------------------
+# Pin EVERYTHING to the same tag so the on-chain ABI and the client agree.
+sequencer_service_rpc = { git = "https://github.com/logos-blockchain/logos-execution-zone", tag = "v0.1.2", features = ["client"] }
+common = { git = "https://github.com/logos-blockchain/logos-execution-zone", tag = "v0.1.2" }
+nssa_core = { git = "https://github.com/logos-blockchain/logos-execution-zone", tag = "v0.1.2" }
+# `nssa` IS required: the public-transaction assembly types
+# (`PublicTransaction`, `public_transaction::{Message, WitnessSet}`) and the
+# signing key (`PrivateKey` / `PublicKey`) live here. Verified against v0.1.2
+# (`nssa/src/lib.rs`, `nssa/src/public_transaction/*`, `nssa/src/signature/*`); it
+# also matches the SPEL-generated client's imports
+# (`use nssa::{AccountId, ProgramId, PublicTransaction, public_transaction::{Message, WitnessSet}}`).
+nssa = { git = "https://github.com/logos-blockchain/logos-execution-zone", tag = "v0.1.2" }
+# `wallet` is NOT required by these host-only client paths, so it is omitted to
+# keep the build graph (and the ring / risc0 surface) as small as possible. If the
+# typed SPEL-generated client is wired in and needs the wallet, add (SAME tag):
+#   wallet = { git = "https://github.com/logos-blockchain/logos-execution-zone", tag = "v0.1.2" }
+
+# --- Runtime / utilities -------------------------------------------------------
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+borsh = "1"
+hex = "0.4"
+sha2 = "0.10"
+tracing = "0.1"
+
+[profile.release]
+opt-level = 3
+
+# ==============================================================================
+# KNOWN BUILD ISSUE — LEZ #468: guest / `ring` riscv32 break.
+#
+# When the LEZ deps (transitively, via the SPEL/RISC0 program client) try to
+# build `ring` for the `riscv32im-risc0-zkvm-elf` target, the build fails. The
+# documented workaround is to disable `risc0-zkvm`'s default features (which pull
+# the offending `ring`-backed crypto path) by patching the LEZ crates to a local
+# fork. For a HOST-ONLY client crate this may not bite — but ship the patch ready
+# to go so the build machine only has to uncomment + point at a local checkout.
+#
+# To apply on the build machine:
+#   1. git clone https://github.com/logos-blockchain/logos-execution-zone \
+#        ../../vendor/logos-execution-zone   # (then `git checkout v0.1.2`)
+#   2. In that fork, set risc0-zkvm with default-features = false everywhere it is
+#      a dependency (nssa_core / nssa / common and any guest method crates), and
+#      re-enable only the features you actually need on the host.
+#   3. Uncomment the block below and adjust the relative paths.
+#
+# NOTE: the patch URL key MUST exactly match the dependency source. Because the
+# deps above use `git = "https://github.com/logos-blockchain/logos-execution-zone"`,
+# cargo normalizes the source to the `.git`-suffixed form for patch matching.
+# ------------------------------------------------------------------------------
+# [patch."https://github.com/logos-blockchain/logos-execution-zone.git"]
+# nssa_core = { path = "../../vendor/logos-execution-zone/nssa_core" }
+# nssa      = { path = "../../vendor/logos-execution-zone/nssa" }
+# common    = { path = "../../vendor/logos-execution-zone/common" }
+# sequencer_service_rpc = { path = "../../vendor/logos-execution-zone/sequencer_service_rpc" }
+#
+# If the `ring` break is in a transitive crate rather than a LEZ crate, patch that
+# crate directly instead, e.g. (illustrative — confirm the exact crate/version):
+# [patch.crates-io]
+# ring = { git = "https://github.com/briansmith/ring", tag = "<fixed-tag>" }
+# ==============================================================================

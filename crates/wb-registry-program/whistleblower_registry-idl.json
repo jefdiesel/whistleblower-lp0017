@@ -1,0 +1,112 @@
+{
+  "accounts": [
+    {
+      "name": "AnchorArg",
+      "type": {
+        "fields": [
+          {
+            "name": "cid",
+            "type": "string"
+          },
+          {
+            "name": "metadata_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ],
+        "kind": "struct"
+      }
+    },
+    {
+      "name": "RegistryRecord",
+      "type": {
+        "fields": [
+          {
+            "name": "cid",
+            "type": "string"
+          },
+          {
+            "name": "metadata_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "anchor_timestamp",
+            "type": "u64"
+          }
+        ],
+        "kind": "struct"
+      }
+    }
+  ],
+  "errors": [],
+  "instructions": [
+    {
+      "accounts": [
+        {
+          "init": false,
+          "name": "records",
+          "rest": true,
+          "signer": false,
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "entries",
+          "type": {
+            "vec": {
+              "defined": "AnchorArg"
+            }
+          }
+        },
+        {
+          "name": "anchor_timestamp",
+          "type": "u64"
+        }
+      ],
+      "name": "anchor_batch"
+    },
+    {
+      "accounts": [
+        {
+          "init": false,
+          "name": "record",
+          "signer": false,
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "cid",
+          "type": "string"
+        },
+        {
+          "name": "metadata_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "anchor_timestamp",
+          "type": "u64"
+        }
+      ],
+      "name": "anchor_one"
+    }
+  ],
+  "name": "whistleblower_registry",
+  "types": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,23 @@
+[package]
+name = "wb-e2e"
+description = "End-to-end integration tests for the Whistleblower upload -> broadcast -> anchor pipeline."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+# Integration tests exercise the public APIs of the pipeline crates as a black
+# box, so they live under tests/ and only need dev-dependencies. wb-types is
+# pulled in with its default features (hash + json) so the tests can compute the
+# canonical metadata_hash and (de)serialize envelopes.
+[dev-dependencies]
+wb-index = { path = "../crates/wb-index" }
+wb-types = { path = "../crates/wb-types" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+anyhow = "1"
+tempfile = "3"

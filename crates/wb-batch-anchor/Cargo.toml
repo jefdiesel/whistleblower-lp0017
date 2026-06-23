@@ -1,0 +1,30 @@
+[package]
+name = "wb-batch-anchor"
+description = "Permissionless Whistleblower batch-anchor CLI: subscribe to the Delivery topic, accumulate (CID, metadata_hash) tuples, and commit them on-chain in idempotent, resumable batches. Also publishes and queries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# Library target: the shared CLI definition + the generic `run` driver, reused by
+# both this crate's (file-backed) binary and the on-chain `wb-batch-anchor-lez`
+# binary in the wb-lez-registry crate.
+[lib]
+name = "wb_batch_anchor"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wb-batch-anchor"
+path = "src/main.rs"
+
+[dependencies]
+wb-index = { workspace = true }
+wb-types = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }

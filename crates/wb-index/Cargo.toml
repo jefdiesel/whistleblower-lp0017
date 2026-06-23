@@ -1,0 +1,24 @@
+[package]
+name = "wb-index"
+description = "Whistleblower document-indexing module: a self-contained, reusable upload -> broadcast -> anchor pipeline over Logos Storage, Logos Delivery, and a LEZ CID registry. Usable by any Logos app independently of the Whistleblower Basecamp app."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+wb-types = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+borsh = { workspace = true }
+hex = { workspace = true }
+base64 = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time", "test-util"] }
+tempfile = "3"

@@ -1,0 +1,41 @@
+[Script Info]
+; Whistleblower (LP-0017) — TikTok-style burned-in captions.
+; Burn over a screen recording with:
+;   ffmpeg -i recording.mov -vf "ass=docs/captions.ass" -c:a copy whistleblower_tiktok.mp4
+; Designed for a vertical 1080x1920 frame. Re-time the Start/End to your take.
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+; TikTok auto-caption look: bold white, thick black outline, centered, slight shadow.
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Tok, Arial Black, 72, &H00FFFFFF, &H000000FF, &H00000000, &H64000000, 1, 0, 0, 0, 100, 100, 0, 0, 1, 6, 2, 5, 80, 80, 0, 1
+Style: TokHi, Arial Black, 76, &H0000F0FF, &H000000FF, &H00000000, &H64000000, 1, 0, 0, 0, 100, 100, 0, 0, 1, 6, 2, 5, 80, 80, 0, 1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+; --- Scene 1: hook ---
+Dialogue: 0,0:00:00.00,0:00:02.40,TokHi,,0,0,0,,{\fad(120,120)}WHISTLEBLOWER
+Dialogue: 0,0:00:02.40,0:00:05.20,Tok,,0,0,0,,{\fad(100,100)}publish documents that\Ncan't be taken down
+Dialogue: 0,0:00:05.20,0:00:08.00,Tok,,0,0,0,,{\fad(100,100)}no server. no censorship.\Nbuilt on the Logos stack
+; --- Scene 2: how ---
+Dialogue: 0,0:00:08.00,0:00:11.00,TokHi,,0,0,0,,{\fad(100,100)}upload → broadcast → anchor
+Dialogue: 0,0:00:11.00,0:00:13.50,Tok,,0,0,0,,{\fad(100,100)}Storage holds the bytes →\Na content ID (CID)
+Dialogue: 0,0:00:13.50,0:00:16.00,Tok,,0,0,0,,{\fad(100,100)}Delivery broadcasts it →\Ninstantly findable
+Dialogue: 0,0:00:16.00,0:00:19.00,Tok,,0,0,0,,{\fad(100,100)}a permissionless LEZ program\Nanchors it on-chain
+; --- Scene 3: tested core ---
+Dialogue: 0,0:00:19.00,0:00:22.50,TokHi,,0,0,0,,{\fad(100,100)}the core: 30 tests green ✅
+; --- Scene 4: upload ---
+Dialogue: 0,0:00:22.50,0:00:26.00,Tok,,0,0,0,,{\fad(100,100)}real upload → real CID\Nfrom a live Storage node
+; --- Scene 5: anchor + proof ---
+Dialogue: 0,0:00:26.00,0:00:29.00,TokHi,,0,0,0,,{\fad(100,100)}anchoring it ON-CHAIN
+Dialogue: 0,0:00:29.00,0:00:32.50,Tok,,0,0,0,,{\fad(100,100)}RISC0_DEV_MODE=0\N= REAL zk proving 🔐
+Dialogue: 0,0:00:32.50,0:00:35.50,TokHi,,0,0,0,,{\fad(100,100)}tx confirmed in a block ✅
+; --- Scene 6: query ---
+Dialogue: 0,0:00:35.50,0:00:39.00,Tok,,0,0,0,,{\fad(100,100)}query by CID →\Nthe record reads back
+Dialogue: 0,0:00:39.00,0:00:42.00,Tok,,0,0,0,,{\fad(100,100)}permissionless • idempotent\N• censorship-resistant
+; --- Scene 7: wrap ---
+Dialogue: 0,0:00:42.00,0:00:45.00,TokHi,,0,0,0,,{\fad(120,200)}Whistleblower — LP-0017 🏆

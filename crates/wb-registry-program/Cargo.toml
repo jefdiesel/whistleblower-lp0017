@@ -1,0 +1,10 @@
+# Self-contained workspace for the on-chain registry. Excluded from the repo's
+# root workspace (it pins LEZ v0.1.2 and builds a riscv32 zkVM guest).
+#
+# The guest (methods/guest) is a *further* detached workspace and is where the
+# logos-execution-zone#468 `ring` [patch] must be applied — see
+# methods/guest/Cargo.toml. The host members below build natively without it.
+[workspace]
+members = ["wb_registry_core", "methods", "examples"]
+exclude = ["methods/guest"]
+resolver = "2"

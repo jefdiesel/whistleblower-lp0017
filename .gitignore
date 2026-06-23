@@ -1,0 +1,36 @@
+# Rust
+/target
+**/target
+
+# Cargo.lock IS committed (this repo ships binaries + a reproducible demo).
+
+# Nix / Logos build outputs
+result
+result-*
+*.lgx
+
+# Local runtime state
+/.wb
+*.checkpoint.json
+.env
+.env.*
+!.env.example
+
+# RISC0 / program build artifacts
+*.bin
+artifacts/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Claude Code session state (not part of the submission)
+.claude/
+
+# Media + render artifacts (the demo video is hosted/linked, not committed)
+*.mp4
+*.cast
+*.gif
+frame_*.png

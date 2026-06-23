@@ -1,0 +1,14 @@
+{
+  "name": "whistleblower",
+  "version": "0.1.0",
+  "type": "ui_qml",
+  "view": "qml/Main.qml",
+  "description": "Whistleblower — censorship-resistant document upload and indexing.",
+  "author": "Whistleblower contributors",
+  "license": "MIT OR Apache-2.0",
+  "dependencies": [
+    "storage_module",
+    "delivery_module",
+    "whistleblower_registry"
+  ]
+}

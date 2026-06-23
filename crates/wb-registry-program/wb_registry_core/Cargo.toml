@@ -1,0 +1,11 @@
+[package]
+name = "wb_registry_core"
+description = "Shared types for the Whistleblower on-chain registry: the (cid, metadata_hash) instruction arg, the per-document record, and the canonical CID->PDA seed derivation. Compiles for both the RISC0 guest and the host adapter."
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+borsh = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"

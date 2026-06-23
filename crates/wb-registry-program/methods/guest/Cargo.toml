@@ -1,0 +1,32 @@
+[package]
+name = "wb-registry-guest"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+# The guest is its own (detached) workspace: it cross-compiles to
+# riscv32im-risc0-zkvm-elf and must not join the outer Cargo workspace.
+[workspace]
+
+[[bin]]
+name = "wb_registry"
+path = "src/bin/wb_registry.rs"
+
+[dependencies]
+spel-framework = { git = "https://github.com/logos-co/spel.git", branch = "main" }
+nssa_core = { git = "https://github.com/logos-blockchain/logos-execution-zone.git", tag = "v0.1.2" }
+risc0-zkvm = { version = "=3.0.5", features = ["std"] }
+wb_registry_core = { path = "../../wb_registry_core" }
+serde = { version = "1.0", features = ["derive"] }
+borsh = "1.5"
+ruint = "=1.17.0"
+
+# ── REQUIRED to build the guest (logos-execution-zone#468) ───────────────────
+# LEZ enables risc0-zkvm default features, which pull `ring`, which cannot
+# cross-compile to riscv32. Fork LEZ, set in its Cargo.toml
+#   risc0-zkvm = { version = "3.0.5", default-features = false, features = ["std"] }
+# then uncomment and point this patch at your fork:
+#
+# [patch."https://github.com/logos-blockchain/logos-execution-zone.git"]
+# nssa_core = { git = "https://github.com/YOUR-USER/logos-execution-zone.git", branch = "fix-risc0-defaults" }
+# nssa      = { git = "https://github.com/YOUR-USER/logos-execution-zone.git", branch = "fix-risc0-defaults" }

@@ -1,0 +1,6 @@
+[program]
+idl = "whistleblower_registry-idl.json"
+# Path produced by the reproducible Docker build (`make build`). For the no-Docker
+# build (`make build-local`) the binary is at
+# methods/guest/target/riscv32im-risc0-zkvm-elf/release/wb_registry
+binary = "methods/guest/target/riscv32im-risc0-zkvm-elf/docker/wb_registry.bin"

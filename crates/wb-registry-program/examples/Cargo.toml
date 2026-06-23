@@ -1,0 +1,25 @@
+[package]
+name = "wb-registry-examples"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "generate_idl"
+path = "src/bin/generate_idl.rs"
+
+[[bin]]
+name = "wb_registry_cli"
+path = "src/bin/wb_registry_cli.rs"
+
+[[bin]]
+name = "pda"
+path = "src/bin/pda.rs"
+
+[dependencies]
+spel-framework = { git = "https://github.com/logos-co/spel.git", branch = "main" }
+nssa_core = { git = "https://github.com/logos-blockchain/logos-execution-zone.git", tag = "v0.1.2" }
+spel = { git = "https://github.com/logos-co/spel.git", branch = "main" }
+wb_registry_core = { path = "../wb_registry_core" }
+serde_json = "1.0"
+tokio = { version = "1.28.2", features = ["net", "rt-multi-thread", "sync", "macros"] }
