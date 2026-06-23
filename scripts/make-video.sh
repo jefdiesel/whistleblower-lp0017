@@ -18,10 +18,10 @@ export DEMO="/Users/minim4/lamda/crates/wb-lez-registry/target/debug/batch-demo"
 export SAMPLE="/Users/minim4/lamda/scripts/sample-doc.txt"
 
 # --- render settings ----------------------------------------------------------
-WIN=90x20           # terminal cols x rows
+WIN=110x18          # terminal cols x rows (wide => tx hashes fit on one line)
 FONT=23             # agg font size (px)
-CANVAS_W=1080; CANVAS_H=1920
-TERM_W=1044         # terminal scaled to this width, centered
+CANVAS_W=1920; CANVAS_H=1080      # landscape 16:9
+FIT_W=1840; FIT_H=760            # terminal fits within this box, aspect preserved
 BG=0x0d1117
 SCENES="${SCENES:-all}"
 
@@ -41,8 +41,8 @@ mkdir -p "$WORK"; cd "$WORK"
 mkcap() {
   local out="$1" text="$2"
   magick -background "#111827ee" -fill white -font "$CAPFONT" -pointsize 46 \
-    -size 940x -gravity center caption:"$text" \
-    -bordercolor "#111827ee" -border 34x24 "$WORK/_boxed.png"
+    -size 1320x -gravity center caption:"$text" \
+    -bordercolor "#111827ee" -border 34x22 "$WORK/_boxed.png"
   local h; h=$(magick identify -format "%h" "$WORK/_boxed.png")
   magick -size ${CANVAS_W}x${h} xc:none "$WORK/_boxed.png" -gravity center -composite "$out"
 }
@@ -50,7 +50,7 @@ mkcap() {
 # --- footer bar (rendered once, reused on every scene) ------------------------
 mkfooter() {
   magick -background "#0b1220cc" -fill "#c9d1d9" -font "$CAPFONT" -pointsize 30 \
-    -size 980x -gravity center \
+    -size 1320x -gravity center \
     caption:"RISC0_DEV_MODE=0    ·    real on-chain    ·    github.com/jefdiesel/whistleblower-lp0017" \
     -bordercolor "#0b1220cc" -border 26x16 "$WORK/_fbox.png"
   local h; h=$(magick identify -format "%h" "$WORK/_fbox.png")
@@ -134,9 +134,16 @@ render_one() {
   asciinema rec --overwrite --window-size "$WIN" -c "bash $WORK/s$n.sh" "$WORK/scene$n.cast" >/dev/null 2>&1
   agg --idle-time-limit 1 --last-frame-duration 2.5 --font-size "$FONT" "$WORK/scene$n.cast" "$WORK/scene$n.gif" 2>/dev/null
   mkcap "$WORK/cap$n.png" "$cap"
-  ffmpeg -y -i "$WORK/scene$n.gif" -i "$WORK/cap$n.png" -i "$WORK/footer.png" -filter_complex \
-    "[0:v]scale=${TERM_W}:-1:flags=lanczos[t];[t]pad=${CANVAS_W}:${CANVAS_H}:(ow-iw)/2:300:color=${BG}[p];[p][1:v]overlay=(W-w)/2:90[c];[c][2:v]overlay=(W-w)/2:H-h-80[o];[o]fps=30,format=yuv420p[v]" \
-    -map "[v]" -an -c:v libx264 -preset medium -crf 20 "$WORK/scene$n.mp4" >/dev/null 2>&1 \
+  # Pre-compose caption + footer into ONE 8-bit full-frame overlay. A single
+  # overlay avoids ffmpeg choking on chained 16-bit (Q16) PNG overlays.
+  magick -size ${CANVAS_W}x${CANVAS_H} xc:none \
+    "$WORK/cap$n.png" -gravity north -geometry +0+30 -composite \
+    "$WORK/footer.png" -gravity south -geometry +0+30 -composite \
+    -depth 8 PNG32:"$WORK/frame$n.png"
+  # fps + setsar up front normalize the gif's irregular timing so libx264 accepts it.
+  ffmpeg -y -i "$WORK/scene$n.gif" -i "$WORK/frame$n.png" -filter_complex \
+    "[0:v]fps=30,scale=${FIT_W}:${FIT_H}:force_original_aspect_ratio=decrease:flags=lanczos,setsar=1[t];[t]pad=${CANVAS_W}:${CANVAS_H}:(ow-iw)/2:(oh-ih)/2:color=${BG}[p];[p][1:v]overlay=0:0,format=yuv420p[v]" \
+    -map "[v]" -an -r 30 -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p "$WORK/scene$n.mp4" >/dev/null 2>&1 \
     && echo "  scene$n.mp4 OK ($(du -h "$WORK/scene$n.mp4" | cut -f1))" || echo "  scene$n FFMPEG FAILED"
 }
 
