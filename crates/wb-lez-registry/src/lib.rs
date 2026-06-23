@@ -158,6 +158,10 @@ type Client = SequencerClient;
 pub struct LezRegistry {
     client: Client,
     program_id: ProgramId,
+    /// Retained for a future *signed*-program variant. The current
+    /// `whistleblower_registry` IDL is permissionless / signer-less, so anchoring
+    /// submits an empty witness and does not read this key (see `anchor_batch`).
+    #[allow(dead_code)]
     signer: SignerKey,
 }
 
@@ -247,58 +251,49 @@ impl wb_index::RegistryClient for LezRegistry {
         let account_ids: Vec<AccountId> =
             entries.iter().map(|e| self.pda_for_cid(&e.cid)).collect();
 
-        // 2) Determine the signer/nonce set.
+        // 2) Signer/nonce set: EMPTY. This is REQUIRED, not optional — verified
+        //    against the LEZ v0.1.2 source and the running sequencer.
         //
-        //    VERIFIED, with a caveat. In the SPEL-generated client, `nonces`
-        //    correspond to the *signer* accounts (those with `signer: true` in the
-        //    IDL), and `Message.account_ids` (the writable PDAs) are a SEPARATE
-        //    field. The `whistleblower_registry` IDL declares its `records` account
-        //    with `signer: false` and has NO signer account, so the generated
-        //    client would build an EMPTY signer set → empty `nonces` → an unsigned
-        //    witness. Anchoring is permissionless on-chain, which is consistent
-        //    with that.
+        //    The `whistleblower_registry` IDL declares NO `signer: true` account:
+        //    anchoring is permissionless and each per-CID PDA is *program*-claimed
+        //    (`Claim::Pda`). The SPEL-generated client builds an empty signer set
+        //    for such an IDL (empty `nonces`, empty witness), and so must we.
         //
-        //    This adapter, however, is wired with an explicit fee-payer `signer`
-        //    (`WB_SIGNER_KEY`). We sign with it and supply that signer's nonce, so
-        //    the message is authenticated end-to-end. The signer's own account id
-        //    is `AccountId::from(&PublicKey)`, derived inside `WitnessSet`; its
-        //    nonce is fetched here.
+        //    WHY it's required: nssa's
+        //    `PublicTransaction::affected_public_account_ids`
+        //    (`nssa/src/public_transaction/transaction.rs`) is
+        //    `witness.signer_account_ids()` FOLLOWED BY `message.account_ids`, and
+        //    the guest receives that whole set as `pre_states`. The guest's
+        //    `anchor_batch` asserts `records.len() == entries.len()` (records ==
+        //    pre_states for this 0-fixed/all-rest instruction). So a single
+        //    fee-payer signature would prepend ONE account → `pre_states.len()`
+        //    becomes `entries.len() + 1` → the guest reverts. The transaction is
+        //    still sequenced into a block, but it writes nothing — precisely the
+        //    "batch tx accepted but no records persisted" symptom. An empty signer
+        //    set makes `pre_states` exactly the PDAs, so the lengths match.
         //
-        //    TODO(verify against the DEPLOYED sequencer policy): whether v0.1.2's
-        //    sequencer REQUIRES a fee-payer signature for a permissionless program
-        //    invocation (sign + 1 nonce, as below) or ACCEPTS an unsigned tx with
-        //    empty nonces (matching the generated client for this signer-less IDL).
-        //    Both `Message` shapes are valid borsh; only the live mempool policy
-        //    decides. If unsigned is required/accepted, set `nonces = vec![]` and
-        //    `signing_keys = &[]`. This is the single remaining unverifiable spot.
-        let signer_account_id = AccountId::from(&nssa::PublicKey::new_from_private_key(&self.signer));
-        let nonces = self
-            .client
-            // VERIFIED: `get_accounts_nonces(account_ids: Vec<AccountId>) ->
-            // Result<Vec<Nonce>, ClientError>` — takes an OWNED Vec, returns
-            // nonces aligned with the input order.
-            .get_accounts_nonces(vec![signer_account_id])
-            .await
-            .map_err(|e| RegistryError::Transport(format!("get_accounts_nonces: {e}")))?;
+        //    (`self.signer` is retained on the struct for a future *signed*-program
+        //    variant; this permissionless IDL does not use it.)
+        let nonces = Vec::new();
 
         // 3) Build the typed instruction value (the SPEL `Instruction` enum
         //    variant). NOT pre-serialized: `Message::try_new` serializes it with
-        //    risc0 word-serde. See [`encode_anchor_batch_instruction`].
+        //    risc0 word-serde — `Program::serialize_instruction` is
+        //    `risc0_zkvm::serde::to_vec` (verified, `nssa/src/program.rs`). See
+        //    [`encode_anchor_batch_instruction`].
         let instruction = encode_anchor_batch_instruction(entries, anchor_timestamp_ms);
 
-        // 4) Build the message: program_id (by value) + writable accounts +
-        //    signer nonces + the typed instruction.
+        // 4) Build the message: program_id (by value) + writable PDAs + (empty)
+        //    nonces + the typed instruction.
         //    VERIFIED: `Message::try_new<T: Serialize>(program_id: ProgramId,
         //    account_ids: Vec<AccountId>, nonces: Vec<Nonce>, instruction: T)
         //    -> Result<Message, NssaError>`.
         let message = Message::try_new(self.program_id, account_ids, nonces, instruction)
             .map_err(|e| RegistryError::Rejected(format!("Message::try_new: {e}")))?;
 
-        // 5) Sign the message -> witness set.
-        //    VERIFIED: `WitnessSet::for_message(message: &Message,
-        //    private_keys: &[&PrivateKey]) -> WitnessSet` — INFALLIBLE (returns
-        //    `Self`, not `Result`) and borrows a slice of `&PrivateKey`.
-        let witness_set = WitnessSet::for_message(&message, &[&self.signer]);
+        // 5) Empty witness — this permissionless program has no signer account, so
+        //    no key signs (see step 2). `for_message` is infallible.
+        let witness_set = WitnessSet::for_message(&message, &[] as &[&PrivateKey]);
 
         // 6) Wrap into a public transaction and submit.
         //    VERIFIED: `PublicTransaction::new(message, witness_set)` then

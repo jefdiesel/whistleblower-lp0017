@@ -112,14 +112,27 @@ prover backend used (it dominates prove time).
 > an order-of-magnitude expectation for Apple Silicon; a CUDA host would be much
 > faster.
 
-| Scenario | public-exec time (measured) | user_cycles | total_cycles | prove_time | proof_bytes |
-| --- | --- | --- | --- | --- | --- |
-| single-CID (`anchor_one`, 1 PDA) | **~3–7 ms** (M4, `RISC0_DEV_MODE=0`) | _pending cycle_bench_ | _pending_ | n/a (public exec) | n/a (public exec) |
-| 50-CID (`anchor_batch`, 50 PDAs) | _pending batch encoder_ | _pending_ | _pending_ | n/a (public exec) | n/a (public exec) |
+| Scenario | public-exec time (measured) | per-CID | user_cycles | total_cycles | prove_time | proof_bytes |
+| --- | --- | --- | --- | --- | --- | --- |
+| single-CID (`anchor_batch`, 1 PDA) | **~3.0 ms** (3.03–3.07) | 3.0 ms | _pending cycle_bench_ | _pending_ | n/a (public exec) | n/a (public exec) |
+| 50-CID (`anchor_batch`, 50 PDAs) | **~48.6 ms** (48.4–48.9) | **0.97 ms** | _pending cycle_bench_ | _pending_ | n/a (public exec) | n/a (public exec) |
 
 **Measured on the build mini** (Mac mini M4, 16 GB, macOS 15.3.2, RISC0 3.0.5,
-`RISC0_DEV_MODE=0`): a real single-CID anchor executes in **~3–7 ms** on the
-standalone sequencer's executor.
+`RISC0_DEV_MODE=0`), real on-chain anchors through the standalone sequencer's
+executor, three fresh runs each (every run verified — 1/1 and 50/50 records read
+back by PDA):
+
+- **single-CID** (`anchor_batch`, batch length 1): **~3.0 ms** — 3.031 / 3.050 /
+  3.068 ms.
+- **50-CID** (`anchor_batch`, batch length 50): **~48.6 ms** — 48.443 / 48.493 /
+  48.851 ms.
+
+**Batching wins (the whole point of `anchor_batch`).** A 50-CID batch costs
+~48.6 ms total = **0.97 ms per CID**, versus **3.0 ms** for a standalone single —
+**~3× cheaper per CID**. The fit is linear: ≈2 ms fixed per-invocation overhead +
+≈0.93 ms marginal per CID (`(48.6 − 3.0) / (50 − 1) ≈ 0.93`). One execution
+amortized over 50 CIDs beats 50 separate single anchors, which is exactly why the
+runner accumulates tuples before anchoring.
 
 > **Key nuance:** the registry uses **public** accounts, so anchoring runs as
 > **public execution** on the sequencer's executor — there is **no per-transaction
@@ -128,11 +141,14 @@ standalone sequencer's executor.
 > executor + real block-level receipts). The `prove_time`/`proof_bytes` columns
 > apply only to private-proof workloads, hence "n/a (public exec)" here.
 
-Still pending: (1) isolated per-op **user/total cycle counts** via an executor
-`cycle_bench` harness (the sequencer log reports wall-time, not isolated cycles);
-(2) the **50-CID** row, which needs the batch instruction encoded via the
-SPEL-generated client (`make ffi-gen`) — see SUBMISSION.md F4 and the
-`wb-lez-registry` adapter note.
+Still pending (a nicety, not a blocker): isolated per-op **user/total cycle
+counts** via an executor `cycle_bench` harness. The sequencer log reports executor
+**wall-time** (the figures above), not RISC0 cycle totals; a small executor-only
+harness feeding the guest the same `anchor_batch` input would print `user_cycles`
+/ `total_cycles` per batch size. The wall-time numbers above are the headline cost
+characterization, and the **50-CID batch path is now verified on-chain** (the
+earlier `make ffi-gen` blocker is resolved — the adapter encodes the instruction
+correctly with an empty witness; see SUBMISSION.md F4).
 
 **Reference numbers (LEZ benchmarks, 16 GB Apple M2 Pro, CPU/Metal, no CUDA):**
 
