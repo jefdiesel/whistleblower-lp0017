@@ -112,10 +112,27 @@ prover backend used (it dominates prove time).
 > an order-of-magnitude expectation for Apple Silicon; a CUDA host would be much
 > faster.
 
-| Scenario | user_cycles | total_cycles | prove_time | proof_bytes |
-| --- | --- | --- | --- | --- |
-| single-CID (`anchor_batch`, batch len 1) | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| 50-CID (`anchor_batch`, batch len 50) | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| Scenario | public-exec time (measured) | user_cycles | total_cycles | prove_time | proof_bytes |
+| --- | --- | --- | --- | --- | --- |
+| single-CID (`anchor_one`, 1 PDA) | **~3–7 ms** (M4, `RISC0_DEV_MODE=0`) | _pending cycle_bench_ | _pending_ | n/a (public exec) | n/a (public exec) |
+| 50-CID (`anchor_batch`, 50 PDAs) | _pending batch encoder_ | _pending_ | _pending_ | n/a (public exec) | n/a (public exec) |
+
+**Measured on the build mini** (Mac mini M4, 16 GB, macOS 15.3.2, RISC0 3.0.5,
+`RISC0_DEV_MODE=0`): a real single-CID anchor executes in **~3–7 ms** on the
+standalone sequencer's executor.
+
+> **Key nuance:** the registry uses **public** accounts, so anchoring runs as
+> **public execution** on the sequencer's executor — there is **no per-transaction
+> STARK proof** for a public anchor, which is why it's milliseconds, not the
+> minutes-scale of a *private* proof. `RISC0_DEV_MODE=0` is still in force (real
+> executor + real block-level receipts). The `prove_time`/`proof_bytes` columns
+> apply only to private-proof workloads, hence "n/a (public exec)" here.
+
+Still pending: (1) isolated per-op **user/total cycle counts** via an executor
+`cycle_bench` harness (the sequencer log reports wall-time, not isolated cycles);
+(2) the **50-CID** row, which needs the batch instruction encoded via the
+SPEL-generated client (`make ffi-gen`) — see SUBMISSION.md F4 and the
+`wb-lez-registry` adapter note.
 
 **Reference numbers (LEZ benchmarks, 16 GB Apple M2 Pro, CPU/Metal, no CUDA):**
 

@@ -64,6 +64,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 borsh = "1"
+serde = { version = "1", features = ["derive"] }
 hex = "0.4"
 sha2 = "0.10"
 tracing = "0.1"

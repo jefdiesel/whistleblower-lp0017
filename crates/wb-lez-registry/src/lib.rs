@@ -92,6 +92,7 @@
 use std::env;
 
 use anyhow::{anyhow, Context};
+use borsh::BorshDeserialize;
 
 // --- LEZ v0.1.2 imports --------------------------------------------------------
 // VERIFIED (sequencer/service/rpc/src/lib.rs): with the `client` feature, this
