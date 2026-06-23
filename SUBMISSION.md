@@ -83,7 +83,7 @@ Verified here: `cargo test --workspace` (30 tests) and `bash scripts/dev-demo.sh
 | S3 | **CI green** | **DONE** (gating job) | The gating `workspace` job (fmt + build + test + clippy, Rust 1.94) is green. |
 | S4 | **README** | **DONE** | Architecture, LEZ-program rationale, build/run, query-by-CID, criteria, filed issues. |
 | S5 | **Reproducible demo, `RISC0_DEV_MODE=0`** | **DONE** (on-chain) / **PARTIAL** (full pipeline) | The anchor→confirm→query demo runs live with `RISC0_DEV_MODE=0` (real proving). The full upload→broadcast→anchor with a live Delivery node uses the dev path here; `scripts/demo.sh` runs it on Linux. |
-| S6 | **Recorded video** (narrated, real proof) | **REMAINING (in progress)** | Script + driver run-list ready (`docs/VIDEO-SCRIPT.md`); recording the narrated `RISC0_DEV_MODE=0` walkthrough is the human step now under way. |
+| S6 | **Recorded video** (narrated, real proof) | **DONE** | Narrated 1920×1080 walkthrough, `RISC0_DEV_MODE=0`: [demo video](https://github.com/jefdiesel/whistleblower-lp0017/releases/download/v0.1.0/whistleblower-lp0017-narrated.mp4) ([release](https://github.com/jefdiesel/whistleblower-lp0017/releases/tag/v0.1.0)). Real Codex CIDs + canonical SHA-256 hashes; shows upload → single + 12/50-CID batch anchor → query-by-CID → benchmarks. |
 | S7 | **Public PR** (submission) | **REMAINING (human-only)** | Open the public repo + solution PR to `logos-co/lambda-prize`. |
 | S8 | Dual license **MIT OR Apache-2.0** | **DONE** | Dual-licensed root + per crate; SPDX headers. |
 
@@ -97,6 +97,8 @@ Verified here: `cargo test --workspace` (30 tests) and `bash scripts/dev-demo.sh
   node, and 30 green tests.
 - **PARTIAL (clear finish):** live Waku broadcast (any Linux box), Basecamp app
   build (Nix+Qt6), SPEL-generated IDL clients (`spel-client-gen`).
-- **REMAINING (human):** record the video, open the public PR.
+- **REMAINING:** open the public PR to `logos-co/lambda-prize`; optionally file the
+  upstream issues in `docs/ISSUES-TO-FILE.md`. (The narrated **video is published**:
+  see the v0.1.0 release.)
 
 Finishing procedure: **[HANDOFF.md](./HANDOFF.md)**. Current detail: **[docs/STATUS.md](./docs/STATUS.md)**.

@@ -17,6 +17,13 @@ provable and **queryable by CID**. A Qt6/QML Logos Basecamp app drives the
 upload/broadcast/anchor flow, and a standalone, permissionless batch-anchor CLI
 indexes the topic and commits CIDs on-chain in idempotent, resumable batches.
 
+> **📹 Demo video (narrated, `RISC0_DEV_MODE=0`) —**
+> **[▶ watch the end-to-end demo](https://github.com/jefdiesel/whistleblower-lp0017/releases/download/v0.1.0/whistleblower-lp0017-narrated.mp4)**
+> ([release page](https://github.com/jefdiesel/whistleblower-lp0017/releases/tag/v0.1.0)).
+> Real Codex upload → single-CID anchor → 12- and 50-CID batch anchors in one
+> transaction → query-by-CID → benchmarks. Real Codex CIDs, real canonical
+> SHA-256 hashes, real on-chain execution.
+
 ---
 
 ## What works today
