@@ -47,15 +47,30 @@ the README does not compile. Please update the docs.
    (`@codex-storage/sdk-js`) and Python client default to `/api/codex/v1`, so they
    mismatch a current node. Please align the SDKs (or document the split).
 
-## 4. `logos-blockchain/logos-execution-zone` — no documented public devnet/testnet RPC
+## 4. `logos-blockchain/logos-execution-zone` — no public LEZ sequencer endpoint to deploy to
 
-**Title:** No documented public LEZ devnet/testnet RPC endpoint for deployment
+**Title:** No public LEZ sequencer endpoint for program deployment (only a mock-settlement standalone sequencer)
 
 **Body:** Prizes ask submitters to deploy to "LEZ devnet/testnet with a documented
-program address," but there is no published public RPC URL — only the standalone
-sequencer (`--features standalone`, `:3040`) is runnable locally. Please publish a
-devnet RPC endpoint + deploy instructions, or clarify that a standalone sequencer
-deployment satisfies the requirement.
+program address," but there is no published public **LEZ sequencer** RPC. The
+public testnet that *is* documented (the `logos-blockchain` node: cryptarchia
+consensus + wallet + faucet on `:8080`) is the **L1 / settlement layer**
+("Bedrock"/"Mantle"), not a LEZ execution endpoint — a LEZ program cannot be
+deployed to it directly.
+
+From the LEZ source (v0.1.2): the sequencer settles each block to Bedrock via
+`submit_inscribe_tx_to_bedrock(SignedMantleTx)`, and the only runnable local mode,
+`--features standalone` (= `sequencer_core/mock`), **mocks** the Bedrock + Indexer
+clients. So a self-hosted public LEZ testnet means running THREE services — an L1
+(Bedrock/cryptarchia) node (whose bootstrap the node docs say takes 12–24h), an
+Indexer, and a **non-standalone** sequencer wired to both — with no published
+endpoints or end-to-end guide.
+
+Ask: publish a public LEZ devnet sequencer RPC (+ the deploy flow against it), or a
+one-command non-standalone bring-up (L1 + indexer + sequencer), or clarify that a
+standalone-sequencer deployment with a documented image id satisfies the prize
+requirement. (For LP-0017 we deployed to a local standalone sequencer and document
+the image id as the program address; anchors run with `RISC0_DEV_MODE=0`.)
 
 ## 5. `logos-blockchain/logos-execution-zone` — guest cross-compile pulls `ring` (riscv32) [#468]
 

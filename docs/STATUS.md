@@ -23,6 +23,17 @@ _Snapshot of what is built, what is verified on real hardware, and what remains.
 - **Query by CID** — `inspect` on PDA `76d5eUdWWRBf7SbcSQFHEmzD4bJKAjqbK3mAqwecR1Tg`
   read back `RegistryRecord { cid: zDvTestWhistleblowerCID0001, metadata_hash: 0x11×32, anchor_timestamp: 1719100000000 }`.
   Full submit → in-block confirm → read-back-by-CID round trip.
+- **Batch anchor (≥10 and 50-CID) — verified end-to-end via `wb-lez-registry`.**
+  A 12-CID `anchor_batch` in ONE tx (`79790d08…`) wrote **12/12** PDAs (each read
+  back by CID), idempotent on re-run; a **50-CID** batch wrote **50/50**, across
+  three fresh runs. Root-caused + fixed the earlier "tx accepted but nothing
+  persisted" bug: the instruction is risc0 word-serde of the SPEL `Instruction`
+  enum (not borsh / not a SHA256 discriminator), and the signer-less IDL requires
+  an **empty witness** — a fee-payer signature prepended an account and tripped the
+  guest's `records.len() == entries.len()` check. Verified against LEZ v0.1.2 source.
+- **Benchmarks (M4, `RISC0_DEV_MODE=0`, real on-chain):** single-CID **~3.0 ms**,
+  50-CID **~48.6 ms** = **0.97 ms/CID** (batching ~3× cheaper per CID). See
+  `docs/benchmarks.md`.
 
 **Logos Storage node — real, on the mini:** `logos-storage` v0.4.0-rc1 running
 (`:8080`, base path `/api/storage/v1`); a real upload returned CID
@@ -30,27 +41,30 @@ _Snapshot of what is built, what is verified on real hardware, and what remains.
 
 **Other deliverables present:** Basecamp Qt/QML app (`app/`); the on-chain
 `RegistryClient` adapter + `wb-batch-anchor-lez` binary (`crates/wb-lez-registry/`,
-rewritten against the real LEZ v0.1.2 API); CI workflow; demo scripts; READMEs;
+**compiled and batch-verified on the mini** against the real LEZ v0.1.2 API); CI
+workflow; demo scripts; READMEs;
 `HANDOFF.md`; this video script (`docs/VIDEO-SCRIPT.md`).
 
 ## ◑ Partial / in progress
 
-- **Logos Delivery node** — no prebuilt macOS-arm64 binary exists; standing up
-  Docker on the mini (Colima) to run the official nwaku image for the
-  upload→broadcast demo beat.
-- **CU/cycle benchmarks** (`docs/benchmarks.md`) — single-CID executor time
-  measured (~3 ms on the mini); RISC0 cycle counts + 50-CID batch row still TBD.
-- **`wb-lez-registry`** adapter is written/verified against the API but not yet
-  compiled end-to-end (needs the RISC0 toolchain build on the mini).
+- **Logos Delivery node** — no prebuilt macOS-arm64 binary exists and Colima had no
+  public-internet egress on the mini, so the upload→broadcast beat uses the
+  in-process dev path. The broadcast code is real (`wb-index` `HttpDelivery`) and
+  unit-tested; it just hasn't been exercised against a live Waku node. (Issue #6.)
+- **RISC0 user/total cycle counts** — a nicety. The headline cost numbers
+  (executor wall-time, above) are captured; isolated cycle totals would need a
+  small executor-only `cycle_bench` harness.
 
 ## ☐ Remaining (incl. human-only)
 
-- Full upload→broadcast→batch-anchor demo against the live Storage + Delivery nodes.
 - Record the **narrated `RISC0_DEV_MODE=0` video** (script: `docs/VIDEO-SCRIPT.md`).
 - Publish the **public repo** and open the **solution PR** to `logos-co/lambda-prize`.
-- 50-CID batch on-chain: the IDL CLI can't encode `Vec<struct>`, so the batch path
-  goes through `wb-lez-registry` / `BatchAnchorRunner` (single-CID `anchor_one`
-  is what the CLI submits live).
+- **Public LEZ testnet (decision: documented as a gap, not attempted).** There is
+  no public LEZ *sequencer* endpoint — only the L1/Bedrock node testnet is
+  published. Our deployment is a real **standalone** LEZ sequencer (mock L1
+  settlement) with a documented image id, and anchors run with `RISC0_DEV_MODE=0`.
+  A full public-testnet LEZ would require an L1 (Bedrock/cryptarchia) node + an
+  Indexer + a non-standalone sequencer wired to both; filed as issue #4.
 
 ## Note on evidence location
 

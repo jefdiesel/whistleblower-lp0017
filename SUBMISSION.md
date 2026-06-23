@@ -7,8 +7,7 @@ and where it lives. Status values:
 
 - **DONE** — implemented *and* exercised (tests pass, or run on real hardware).
 - **PARTIAL** — code complete and the host-side behaviour is tested, but full
-  satisfaction needs a remaining step (a build, the batch-adapter compile, or a
-  live Delivery node — see notes).
+  satisfaction needs a remaining step (a build or a live Delivery node — see notes).
 - **REMAINING** — not yet done (a provisioned-machine step or a human action).
 
 > **Verified on real hardware.** The on-chain program **is** compiled to a
@@ -22,10 +21,11 @@ and where it lives. Status values:
 > the stored `RegistryRecord` back. The Logos **Storage** node is also live
 > (real Codex upload returned a CID). See `docs/STATUS.md`.
 >
-> Honest caveats: (1) the **batch** on-chain path (`anchor_batch(Vec<…>)`) goes
-> through the rewritten `crates/wb-lez-registry` adapter, which is **not yet
-> compiled end-to-end** — the verified live anchor uses the scalar `anchor_one`
-> (same per-CID PDA + idempotent logic) via the SPEL IDL CLI; (2) a real Waku
+> Honest caveats: (1) the **batch** on-chain path (`anchor_batch(Vec<…>)`) runs
+> through the `crates/wb-lez-registry` adapter, now **compiled and verified
+> on-chain** — a **12-CID** batch (tx `79790d08…`) and a **50-CID** batch each
+> landed in one transaction with every record read back by CID
+> (`RISC0_DEV_MODE=0`); (2) a real Waku
 > **Delivery** node could not run on this Mac (no macOS-arm64 binary; the local
 > Docker VM has no public-internet egress), so the broadcast beat is shown via
 > the in-process dev path and runs trivially on any Linux box; (3) the on-chain
@@ -44,11 +44,11 @@ Verified here: `cargo test --workspace` (30 tests) and `bash scripts/dev-demo.sh
 | F2 | **Broadcast** envelope over Logos Delivery | **DONE** (host + dev path) / **PARTIAL** (live Waku) | `HttpDelivery`/`Publisher::broadcast` tested against the documented nwaku REST; a live Waku node wasn't runnable on this Mac (dev path used; works on Linux). |
 | F2a | Minimum envelope fields | **DONE** | `MetadataEnvelope`, all required fields, unit-tested. |
 | F2b | Canonical, language-agnostic `metadata_hash` | **DONE** | Length-prefixed, domain-separated SHA-256; Rust + C++/QML share a vector. |
-| F3 | **On-chain anchoring** of `(cid, metadata_hash)`, permissionless | **DONE** (single-CID, real) / **PARTIAL** (batch submit) | Program deployed; **real `anchor_one` round trip confirmed** with `RISC0_DEV_MODE=0`. Batch submit via the adapter is not yet compiled e2e. Idempotent + permissionless (the `record` account is `signer=false`; no funded signer required). |
+| F3 | **On-chain anchoring** of `(cid, metadata_hash)`, permissionless | **DONE** | Program deployed; **real `anchor_one` AND `anchor_batch` round trips confirmed** with `RISC0_DEV_MODE=0` — 12- and 50-CID batches each in one tx, every record read back by CID. Idempotent + permissionless (signer-less IDL → empty witness; no funded signer required). |
 | F3a | One PDA per CID, deterministic from the CID | **DONE** | `cid_seed = SHA256("WB-CID-PDA-v1"\|\|cid)`; the program and the off-chain `pda` helper derived the **same** PDA, confirmed on-chain. |
 | F3b | Idempotent anchoring | **DONE** | Claim-if-default in the program; verified the live record is stable; mirrored/tested in `MockRegistry`/`FileRegistry`. |
-| F4 | **Batch anchor tool** (≥10; 50 target), standalone + permissionless | **DONE** (tool + batching) / **PARTIAL** (batch on-chain submit) | `BatchAnchorRunner` (default 50) + `anchor_batch(Vec<…>)` tested; the standalone CLI runs the full publish→accumulate→anchor→query loop. On-chain *batch* submit pends the adapter compile (F4a). |
-| F4a | Batch via the SPEL-generated CLI | **REMAINING (blocked upstream)** | SPEL CLI codegen can't encode a `Vec<struct>` arg. Worked around: batching via our `BatchAnchorRunner`; single-CID on-chain via `anchor_one` (verified live). |
+| F4 | **Batch anchor tool** (≥10; 50 target), standalone + permissionless | **DONE** | `BatchAnchorRunner` (default 50) + `anchor_batch(Vec<…>)`; the standalone CLI runs the full publish→accumulate→anchor→query loop. On-chain batch **verified live**: a **12-CID** batch (tx `79790d08…`) and a **50-CID** batch each landed in ONE tx with every record read back by CID (`RISC0_DEV_MODE=0`). |
+| F4a | Batch via a SPEL client (not the IDL CLI) | **DONE** (via adapter; IDL CLI blocked upstream) | The SPEL *IDL CLI* still can't encode a `Vec<struct>` arg (issue #1) — so the batch is submitted by our `wb-lez-registry` adapter, a custom client that builds the same risc0 word-serde `Instruction` value the SPEL-generated client would. **Verified live** (12- and 50-CID). |
 | F5 | **On-chain registry** queryable by CID | **DONE** | `inspect <PDA> --type RegistryRecord` decoded the stored record (cid + metadata_hash + anchor_timestamp) live; `get_by_cid` + CLI `query` tested file-backed. |
 | F6 | **Document-indexing module** (reusable) | **DONE** | `wb-index` — standalone module (Storage/Delivery/Registry clients, `Publisher`, `BatchAnchorRunner`, checkpoints); 21 unit tests. |
 
@@ -72,7 +72,7 @@ Verified here: `cargo test --workspace` (30 tests) and `bash scripts/dev-demo.sh
 
 | # | Criterion | Status | Note |
 | --- | --- | --- | --- |
-| P1 | **Cycle benchmarks**, single-CID vs 50-CID | **PARTIAL** | Single-CID executor time measured (~3 ms on the mini); full RISC0 cycle counts + the 50-CID row pend a measurement pass (`docs/benchmarks.md`, HANDOFF §11). |
+| P1 | **Cycle benchmarks**, single-CID vs 50-CID | **DONE** | Real on-chain `RISC0_DEV_MODE=0` (M4): single-CID **~3.0 ms**, 50-CID **~48.6 ms** = **0.97 ms/CID** (~3× cheaper per CID), 3 fresh runs each (`docs/benchmarks.md`). LEZ has no "compute unit" and public anchors have no per-tx STARK proof, so we report executor time; isolated RISC0 cycle counts (a nicety) would need an executor `cycle_bench` harness. |
 
 ## Supportability
 
@@ -92,11 +92,11 @@ Verified here: `cargo test --workspace` (30 tests) and `bash scripts/dev-demo.sh
 ## Where it stands
 
 - **The hard, prize-critical core is DONE and verified on real hardware:** the
-  upload→…→**on-chain anchor + query-by-CID** path runs live with real proving
-  (`RISC0_DEV_MODE=0`), plus a real Storage node and 30 green tests.
-- **PARTIAL (clear finish):** batch on-chain submit (compile the `wb-lez-registry`
-  adapter), full benchmarks (P1), live Waku broadcast (any Linux box), app build
-  (Nix+Qt6), IDL clients (`spel-client-gen`).
-- **REMAINING (human):** record the video (in progress), open the public PR.
+  upload→…→**on-chain anchor (single + 12/50-CID batch) + query-by-CID** path runs
+  live with real proving (`RISC0_DEV_MODE=0`), plus real benchmarks, a live Storage
+  node, and 30 green tests.
+- **PARTIAL (clear finish):** live Waku broadcast (any Linux box), Basecamp app
+  build (Nix+Qt6), SPEL-generated IDL clients (`spel-client-gen`).
+- **REMAINING (human):** record the video, open the public PR.
 
 Finishing procedure: **[HANDOFF.md](./HANDOFF.md)**. Current detail: **[docs/STATUS.md](./docs/STATUS.md)**.
