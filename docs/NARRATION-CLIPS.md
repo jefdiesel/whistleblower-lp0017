@@ -16,7 +16,7 @@ me the path), then say "audio's in".
 > This is Whistleblower — my entry for Lambda Prize seventeen. It's a
 > censorship-resistant way to publish documents and register them on-chain, built
 > on the Logos stack. And everything you're about to see is real, running
-> on-chain — real RISC-Zero zero-knowledge execution, with dev mode turned off.
+> on-chain — actual RISC-Zero execution, with dev mode turned off.
 
 ## Clip 2 — Upload to Storage
 > First I upload a document to Logos Storage — that's Codex. It comes back with a

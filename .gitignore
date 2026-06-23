@@ -34,3 +34,7 @@ artifacts/
 *.cast
 *.gif
 frame_*.png
+
+# Narration workspace — personal voice recordings + teleprompter, never published.
+# (The canonical read-aloud script lives in docs/NARRATION-CLIPS.md, which IS tracked.)
+/narration/

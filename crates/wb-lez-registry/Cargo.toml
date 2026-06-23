@@ -37,7 +37,7 @@ path = "src/main.rs"
 # --- Local Whistleblower crates (shared, already built & tested) ---------------
 wb-index = { path = "../wb-index" }
 wb-batch-anchor = { path = "../wb-batch-anchor" }
-wb-types = { path = "../wb-types" }
+wb-types = { path = "../wb-types", features = ["hash", "json"] }
 # Shared on-chain types + cid_seed(). NOTE: this crate is written in parallel; the
 # path below is where wb-registry-program exposes its `wb_registry_core` library.
 wb_registry_core = { path = "../wb-registry-program/wb_registry_core" }
